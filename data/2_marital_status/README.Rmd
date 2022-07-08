@@ -1,0 +1,25 @@
+---
+title: "Data Tools 2: A New Variable for Classifying Marital Status in the American Community Survey"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+An R reproduction of STATA code in [Data Tools 2: A New Variable for Classifying Marital Status in the American Community Survey](https://www.aei.org/research-products/working-paper/data-tools-2-a-new-variable-for-classifying-marital-status-in-the-american-community-survey/) by Charles Murray. 
+
+Running this file in R will convert the IPUMS source data in this directory to the form discussed in the article above.
+
+### Load and install (if necessary) packages
+```{r}
+if (!require("pacman")) install.packages("pacman", repos = "https://cloud.r-project.org")
+pacman::p_load(ipumsr, dplyr)
+```
+
+### Read the data and codebook
+```{r}
+ddi <- read_ipums_ddi("usa_00017.xml")
+data <- read_ipums_micro(ddi)
+```
+

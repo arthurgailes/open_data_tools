@@ -3,7 +3,8 @@ README
 
 ## Open Data Tools
 
-A companion piece to Charles Murray’s Data Tools
+A companion piece to Charles Murray’s [Data Tools
+Series](https://www.aei.org/research-products/working-paper/puma-descriptors/)
 
 ## How to use the data
 
