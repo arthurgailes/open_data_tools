@@ -14,13 +14,55 @@ directory to the form discussed in the article above.
 
     ## Loading required package: pacman
 
+    ## Warning: package 'pacman' was built under R version 4.1.1
+
+### Download data to folder
+
+\*\*Skip this section if you don’t have a beta API key
+
+``` r
+# sample reference: https://usa.ipums.org/usa-action/samples/sample_ids
+samples <- paste0('us', 2013:2020, 'a')
+
+# define the data extract
+extract <- define_extract_usa(description = "Replication of Charles Murray's Data Tools part 2", samples =  samples,
+  variables = c('YEAR', 'SERIAL', 'PERNUM', 'RELATED', 'SPLOC', 'MARST',
+    'SEX'),
+  data_format = 'fixed_width')
+
+# submit the data request to IPUMS
+submitted_extract <- submit_extract(extract)
+
+# save the extract for reproduction
+save_extract_as_json(extract, 'ipums_extract.json')
+```
+
+##### Have R check periodically until the extract is ready
+
+``` r
+extract <- define_extract_from_json('ipums_extract.json')
+
+submitted_extract <- submit_extract(extract)
+# will print TRUE when ready, may take a few minutes
+wait_for_extract(submitted_extract)
+
+workingset_path <- download_extract(submitted_extract)
+```
+
+*Alternatively, if you download the extract directly from IPUMS, you can
+use the below:*
+
+``` r
+workingset_path <- 'usa_00021.xml' # your number will vary.
+```
+
 ### Follow the instructions in the article
 
 1.  Open the dataset you want to analyze. In this example, I’ll call it
     workingset. Sort it by YEAR, SERIAL, and PERNUM.
 
 ``` r
-ddi <- read_ipums_ddi("workingset.xml")
+ddi <- read_ipums_ddi(workingset_path)
 workingset <- read_ipums_micro(ddi) 
 ```
 
@@ -85,30 +127,30 @@ This reproduces the dataset used for analysis:
 workingset
 ```
 
-    ##           YEAR  SERIAL PERNUM SPLOC RELATE RELATED SEX MARST PARTRELATED
-    ##        1: 2013       1      1     0     12    1270   2     6          NA
-    ##        2: 2013       2      1     2      1     101   2     1         201
-    ##        3: 2013       2      2     1      2     201   1     1         101
-    ##        4: 2013       2      3     0      3     301   1     6          NA
-    ##        5: 2013       2      4     0      3     301   2     6          NA
-    ##       ---                                                               
-    ## 24854079: 2020 1193466      5     0      3     301   2     6          NA
-    ## 24854080: 2020 1193466      6     0      3     301   1     6          NA
-    ## 24854081: 2020 1193467      1     2      1     101   2     1         201
-    ## 24854082: 2020 1193467      2     1      2     201   1     1         101
-    ## 24854083: 2020 1193468      1     0      1     101   1     6          NA
-    ##           PARTMARST PARTSEX
-    ##        1:        NA      NA
-    ##        2:         1       1
-    ##        3:         1       2
-    ##        4:        NA      NA
-    ##        5:        NA      NA
-    ##       ---                  
-    ## 24854079:        NA      NA
-    ## 24854080:        NA      NA
-    ## 24854081:         1       1
-    ## 24854082:         1       2
-    ## 24854083:        NA      NA
+    ##           YEAR  SERIAL PERNUM SAMPLE     CBSERIAL HHWT      CLUSTER STRATA GQ
+    ##        1: 2013       1      1 201301 8.400000e+01   65 2.013000e+12 260001  4
+    ##        2: 2013       2      1 201301 1.540000e+02   51 2.013000e+12 250001  1
+    ##        3: 2013       2      2 201301 1.540000e+02   51 2.013000e+12 250001  1
+    ##        4: 2013       2      3 201301 1.540000e+02   51 2.013000e+12 250001  1
+    ##        5: 2013       2      4 201301 1.540000e+02   51 2.013000e+12 250001  1
+    ##       ---                                                                    
+    ## 24854079: 2020 1193466      5 202001 2.020001e+12  112 2.020012e+12  50056  1
+    ## 24854080: 2020 1193466      6 202001 2.020001e+12  112 2.020012e+12  50056  1
+    ## 24854081: 2020 1193467      1 202001 2.020001e+12   50 2.020012e+12  20056  1
+    ## 24854082: 2020 1193467      2 202001 2.020001e+12   50 2.020012e+12  20056  1
+    ## 24854083: 2020 1193468      1 202001 2.020001e+12  172 2.020012e+12  30056  1
+    ##           PERWT SPLOC RELATE RELATED SEX MARST PARTRELATED PARTMARST PARTSEX
+    ##        1:    65     0     12    1270   2     6          NA        NA      NA
+    ##        2:    51     2      1     101   2     1         201         1       1
+    ##        3:    62     1      2     201   1     1         101         1       2
+    ##        4:   232     0      3     301   1     6          NA        NA      NA
+    ##        5:    97     0      3     301   2     6          NA        NA      NA
+    ##       ---                                                                   
+    ## 24854079:   103     0      3     301   2     6          NA        NA      NA
+    ## 24854080:   107     0      3     301   1     6          NA        NA      NA
+    ## 24854081:    50     2      1     101   2     1         201         1       1
+    ## 24854082:    53     1      2     201   1     1         101         1       2
+    ## 24854083:   172     0      1     101   1     6          NA        NA      NA
 
 ## Coding ALTMARST
 
@@ -118,15 +160,16 @@ The codes for MARST are:
 ddi$var_info$val_labels[[8]]
 ```
 
-    ## # A tibble: 6 x 2
-    ##     val lbl                    
-    ##   <dbl> <chr>                  
-    ## 1     1 Married, spouse present
-    ## 2     2 Married, spouse absent 
-    ## 3     3 Separated              
-    ## 4     4 Divorced               
-    ## 5     5 Widowed                
-    ## 6     6 Never married/single
+    ## # A tibble: 7 x 2
+    ##     val lbl                                        
+    ##   <dbl> <chr>                                      
+    ## 1     0 Vacant unit                                
+    ## 2     1 Households under 1970 definition           
+    ## 3     2 Additional households under 1990 definition
+    ## 4     3 Group quarters--Institutions               
+    ## 5     4 Other group quarters                       
+    ## 6     5 Additional households under 2000 definition
+    ## 7     6 Fragment
 
 The RELATED code used to create ALTMARST is 1114 (“Unmarried partner”).
 The codes for SEX are 1 for male and 2 for female.

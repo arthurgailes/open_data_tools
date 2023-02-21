@@ -4,7 +4,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 ```
 
 An R reproduction of STATA code in [Data Tools 2: A New Variable for Classifying Marital Status in the American Community Survey](https://www.aei.org/research-products/working-paper/data-tools-2-a-new-variable-for-classifying-marital-status-in-the-american-community-survey/) by Charles Murray.
@@ -13,16 +13,52 @@ Running this file in R will convert the IPUMS source data in this directory to t
 
 ### Load and install (if necessary) packages
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 if (!require("pacman")) install.packages("pacman", repos = "https://cloud.r-project.org")
 pacman::p_load(ipumsr, data.table, scales, testthat)
 ```
+
+### Download data to folder
+**Skip this section if you don't have a beta API key
+```{r eval=FALSE}
+# sample reference: https://usa.ipums.org/usa-action/samples/sample_ids
+samples <- paste0('us', 2013:2020, 'a')
+
+# define the data extract
+extract <- define_extract_usa(description = "Replication of Charles Murray's Data Tools part 2", samples =  samples,
+  variables = c('YEAR', 'SERIAL', 'PERNUM', 'RELATED', 'SPLOC', 'MARST',
+    'SEX'),
+  data_format = 'fixed_width')
+
+# submit the data request to IPUMS
+submitted_extract <- submit_extract(extract)
+
+# save the extract for reproduction
+save_extract_as_json(extract, 'ipums_extract.json')
+```
+
+##### Have R check periodically until the extract is ready
+```{r eval=FALSE}
+extract <- define_extract_from_json('ipums_extract.json')
+
+submitted_extract <- submit_extract(extract)
+# will print TRUE when ready, may take a few minutes
+wait_for_extract(submitted_extract)
+
+workingset_path <- download_extract(submitted_extract)
+```
+
+*Alternatively, if you download the extract directly from IPUMS, you can use the below:*
+```{r}
+workingset_path <- 'usa_00021.xml' # your number will vary.
+```
+
 
 ### Follow the instructions in the article
 
 1. Open the dataset you want to analyze. In this example, I’ll call it workingset. Sort it by YEAR, SERIAL, and PERNUM.
 ```{r}
-ddi <- read_ipums_ddi("workingset.xml")
+ddi <- read_ipums_ddi(workingset_path)
 workingset <- read_ipums_micro(ddi) 
 
 # set to data.table for speed
